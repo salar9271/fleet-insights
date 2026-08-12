@@ -130,6 +130,10 @@ during fitting.
 
 ## Quickstart
 
+Download the dataset from
+[kaggle.com/datasets/outofskills/driving-behavior](https://www.kaggle.com/datasets/outofskills/driving-behavior)
+and extract it to `data/driving_behavior_v2/` before running the pipeline.
+
 ```
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
