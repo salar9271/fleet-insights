@@ -6,6 +6,17 @@ src/features.py (same code used to build the training data), scoring uses
 the saved models/scaler.joblib + models/kmeans.joblib (see
 src/clustering.py), and the narrative comes from src/genai_report.py.
 
+The cluster profile and test ARI used to build the LLM brief's context are
+read from reports/cluster_profile.csv and models/model_metadata.json --
+both written by scripts/run_clustering.py in the same run that produces
+models/scaler.joblib and models/kmeans.joblib -- rather than being
+recomputed by refitting the clustering pipeline at API startup. This
+guarantees the LLM's narrative describes the exact model being served, not a
+separately-refit one that could silently drift from it (e.g. if
+data/processed/ changes without a re-run of scripts/run_clustering.py). See
+validate_feature_contract() in src/clustering.py, called below, for the
+loud-failure check on that same guarantee.
+
 Endpoints
 ---------
 GET /health
@@ -47,6 +58,7 @@ Run with: scripts/run_api.sh
 """
 
 import io
+import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -55,10 +67,11 @@ import pandas as pd
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 
 from src import features
-from src.clustering import get_feature_columns, run_clustering
+from src.clustering import FeatureContractError, get_feature_columns, validate_feature_contract
 from src.genai_report import GenAIReportError, generate_report, load_api_key
 
 MODELS_DIR = Path("models")
+REPORTS_DIR = Path("reports")
 REQUIRED_COLUMNS = ["AccX", "AccY", "AccZ", "GyroX", "GyroY", "GyroZ", "Timestamp"]
 NUMERIC_COLUMNS = REQUIRED_COLUMNS
 
@@ -70,14 +83,27 @@ async def lifespan(app: FastAPI):
     state["scaler"] = joblib.load(MODELS_DIR / "scaler.joblib")
     state["kmeans"] = joblib.load(MODELS_DIR / "kmeans.joblib")
 
+    # Fails loudly at startup if models/ is stale relative to the current
+    # feature contract (e.g. src/features.py changed without re-running
+    # scripts/run_clustering.py) instead of silently mis-scoring every
+    # request.
+    try:
+        validate_feature_contract(state["scaler"], state["kmeans"])
+    except FeatureContractError as e:
+        raise RuntimeError(f"models/ failed the feature-contract check: {e}") from e
+
     # Static context for the LLM brief: how each cluster is characterized
     # (feature z-scores) and how well clustering agrees with true labels on
-    # held-out data. Refit deterministically (fixed random_state) from the
-    # same training data used to produce the saved model -- not derived
-    # from any one /analyse request.
-    results = run_clustering()
-    state["cluster_profile"] = results["profile"].drop(columns=["size"])
-    state["test_ari"] = float(results["test_ari"])
+    # held-out data. Read from the files scripts/run_clustering.py persisted
+    # in the same run that produced models/scaler.joblib and
+    # models/kmeans.joblib -- see the module docstring for why this isn't
+    # re-fit here.
+    profile_df = pd.read_csv(REPORTS_DIR / "cluster_profile.csv", index_col="cluster")
+    state["cluster_profile"] = profile_df.drop(columns=["cluster_name", "size"])
+
+    with open(MODELS_DIR / "model_metadata.json") as f:
+        metadata = json.load(f)
+    state["test_ari"] = float(metadata["test_ari"])
 
     yield
     state.clear()

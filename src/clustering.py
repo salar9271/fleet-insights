@@ -55,6 +55,38 @@ def get_feature_columns(df):
     return [c for c in ORIGINAL_FEATURE_COLS if c in df.columns]
 
 
+class FeatureContractError(RuntimeError):
+    """Raised when a saved scaler/KMeans pair does not match the current
+    feature contract (ORIGINAL_FEATURE_COLS) -- e.g. src/features.py changed
+    (a feature added, removed, or redefined) without re-running
+    scripts/run_clustering.py to refit models/scaler.joblib and
+    models/kmeans.joblib against the new feature set."""
+
+
+def validate_feature_contract(scaler, kmeans, expected_cols=ORIGINAL_FEATURE_COLS):
+    """Fails loudly (rather than silently mis-scoring requests) if a loaded
+    scaler/KMeans pair was not fit on exactly expected_cols, in order.
+    scaler.feature_names_in_ is set by sklearn because fit_scaler() always
+    fits on a DataFrame (see fit_scaler() above); KMeans is fit on the
+    scaler's numpy-array output, so it never has feature names of its own,
+    but its n_features_in_ must still agree with the scaler's."""
+    fitted_cols = list(getattr(scaler, "feature_names_in_", []))
+    if fitted_cols != list(expected_cols):
+        raise FeatureContractError(
+            f"Saved scaler's feature names {fitted_cols} do not match the "
+            f"current feature contract {list(expected_cols)}. The artifacts "
+            f"in models/ are stale relative to src/features.py / "
+            f"src/clustering.py -- re-run scripts/run_clustering.py."
+        )
+    if kmeans.n_features_in_ != scaler.n_features_in_:
+        raise FeatureContractError(
+            f"Saved KMeans expects {kmeans.n_features_in_} features but the "
+            f"saved scaler produces {scaler.n_features_in_} -- models/scaler.joblib "
+            f"and models/kmeans.joblib were not fit together. Re-run "
+            f"scripts/run_clustering.py to regenerate both from the same run."
+        )
+
+
 def fit_scaler(train_df, feature_cols):
     scaler = StandardScaler()
     scaler.fit(train_df[feature_cols])

@@ -1,0 +1,25 @@
+{
+  "feature_cols": [
+    "acc_mag_mean",
+    "acc_mag_std",
+    "acc_mag_max",
+    "acc_mag_p95",
+    "accY_mean",
+    "accY_std",
+    "accY_rate_below_neg3",
+    "accY_rate_above_pos3",
+    "accX_std",
+    "accX_max_abs",
+    "jerk_std",
+    "jerk_rms",
+    "gyroX_std",
+    "gyroY_std",
+    "gyroZ_std",
+    "spectral_energy_ratio_0.2_0.8hz"
+  ],
+  "best_k": 2,
+  "n_train_windows": 180,
+  "n_test_windows": 152,
+  "train_ari": 0.10772464323759798,
+  "test_ari": 0.11971143047551143
+}
