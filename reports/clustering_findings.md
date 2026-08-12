@@ -14,7 +14,7 @@ the label taxonomy.
 A RandomForest was trained on the same 16 features from the train windows
 and evaluated on the held-out test windows (never seen during training).
 
-- **Macro F1 (test): 0.4900**
+- **Macro F1 (test): 0.4924**
 - Majority-class baseline (always predict `SLOW`, the majority test class):
   macro F1 = 0.1953
 
@@ -26,13 +26,13 @@ Confusion matrix (test, rows = true class, columns = predicted class):
 
 | true \\ pred | AGGRESSIVE | NORMAL | SLOW |
 |---|---|---|---|
-| AGGRESSIVE | 28 | 3 | 9 |
-| NORMAL | 15 | 12 | 22 |
-| SLOW | 9 | 17 | 37 |
+| AGGRESSIVE | 29 | 2 | 9 |
+| NORMAL | 15 | 11 | 23 |
+| SLOW | 9 | 16 | 38 |
 
-`AGGRESSIVE` (28/40 correct) and `SLOW` (37/63 correct) are recovered
-reasonably well. `NORMAL` is not (12/49 correct): it is confused with both
-neighbors, most often with `SLOW` (22 cases). This is the same pattern that
+`AGGRESSIVE` (29/40 correct) and `SLOW` (38/63 correct) are recovered
+reasonably well. `NORMAL` is not (11/49 correct): it is confused with both
+neighbors, most often with `SLOW` (23 cases). This is the same pattern that
 shows up in the per-feature separation below.
 
 Permutation importance (test set, macro-F1 scoring, 30 repeats), most
@@ -40,11 +40,11 @@ important features first:
 
 | feature | importance (mean) | importance (std) |
 |---|---|---|
-| accY_std | 0.0682 | 0.0269 |
-| acc_mag_p95 | 0.0224 | 0.0181 |
-| spectral_energy_ratio_0.2_0.8hz | 0.0162 | 0.0120 |
-| acc_mag_std | 0.0122 | 0.0125 |
-| accY_mean | 0.0056 | 0.0110 |
+| accY_std | 0.0695 | 0.0256 |
+| acc_mag_p95 | 0.0213 | 0.0193 |
+| spectral_energy_ratio_0.2_0.8hz | 0.0161 | 0.0106 |
+| acc_mag_std | 0.0101 | 0.0104 |
+| accY_mean | 0.0066 | 0.0076 |
 
 The remaining 11 features have importances at or below noise level (roughly
 ±0.01 or smaller, with standard deviations of similar or larger magnitude),

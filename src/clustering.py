@@ -24,13 +24,35 @@ DBSCAN_ESP_PERCENTILES = (25, 50, 75, 90)
 RANDOM_STATE = 42
 CLUSTER_NAME_TOP_N = 2
 
+# The feature set the deployed pipeline (models/scaler.joblib,
+# models/kmeans.joblib) is fit on and the API expects every upload to
+# produce. Named explicitly -- rather than "every non-metadata column in the
+# windows dataframe" -- so that adding a new feature to src/features.py (e.g.
+# gyro_mag_std, added for the reports/feature_reduction_findings.md
+# comparison) can never silently change what the deployed model is scored
+# against. See reports/feature_reduction_findings.md for the redundancy
+# analysis and the reduced-feature-set comparison, which use their own
+# explicit column lists rather than this one.
+ORIGINAL_FEATURE_COLS = [
+    "acc_mag_mean", "acc_mag_std", "acc_mag_max", "acc_mag_p95",
+    "accY_mean", "accY_std", "accY_rate_below_neg3", "accY_rate_above_pos3",
+    "accX_std", "accX_max_abs",
+    "jerk_std", "jerk_rms",
+    "gyroX_std", "gyroY_std", "gyroZ_std",
+    "spectral_energy_ratio_0.2_0.8hz",
+]
+
 
 def load_windows(path):
     return pd.read_parquet(path)
 
 
 def get_feature_columns(df):
-    return [c for c in df.columns if c not in NON_FEATURE_COLS]
+    """The deployed pipeline's feature contract (ORIGINAL_FEATURE_COLS),
+    filtered to columns actually present in df. Used by the API and by the
+    original-16-feature runs, so it must stay tied to that fixed list rather
+    than "all non-metadata columns" -- see the ORIGINAL_FEATURE_COLS comment."""
+    return [c for c in ORIGINAL_FEATURE_COLS if c in df.columns]
 
 
 def fit_scaler(train_df, feature_cols):

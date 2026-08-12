@@ -8,14 +8,16 @@ the largest independent unit available in this dataset.
 
 Timestamp unit assumption: the Timestamp column is a relative device counter,
 not wall-clock time (see docs/data_selection.md). Treating it as seconds
-yields ~1.7 samples/unit in both files independently, which lines up with
-this dataset family's documented ~2 Hz sampling rate -- so it is treated as
-seconds for the sampling-rate estimate used by the spectral feature below.
-The estimated fs is per-session (not a single global assumption) and is
-attached to every window as `session_fs_hz` so the assumption stays visible
-downstream instead of being buried in a constant.
+yields ~1.7 samples/unit as a whole-file average (spans the large inter-session
+gaps too), close to this dataset family's documented ~2 Hz sampling rate. The
+fs actually used downstream is estimated per session by estimate_session_fs()
+below, which excludes those inter-session gaps and comes out to ~1.85 Hz,
+consistent across all sessions in both files -- this is the value attached to
+every window as `session_fs_hz` and used for the jerk and spectral features,
+so the assumption stays visible downstream instead of being buried in a
+constant. See docs/data_selection.md for both figures and why they differ.
 
-At ~1.7 Hz the Nyquist frequency is ~0.85 Hz, so the spectral band is set to
+At ~1.85 Hz the Nyquist frequency is ~0.93 Hz, so the spectral band is set to
 0.2-0.8 Hz (not the initially-requested 0.5-2 Hz, which mostly exceeded
 Nyquist and would have measured little more than the fixed ceiling imposed
 by the data rate rather than anything about the signal). 0.2-0.8 Hz stays
@@ -92,11 +94,16 @@ def compute_window_features(chunk, session_id, fs):
     acc_mag = np.linalg.norm(acc, axis=1)
     accX = chunk["AccX"].to_numpy()
     accY = chunk["AccY"].to_numpy()
+    gyro = chunk[["GyroX", "GyroY", "GyroZ"]].to_numpy()
+    gyro_mag = np.linalg.norm(gyro, axis=1)
     gyroX = chunk["GyroX"].to_numpy()
     gyroY = chunk["GyroY"].to_numpy()
     gyroZ = chunk["GyroZ"].to_numpy()
 
-    jerk = np.diff(acc_mag)
+    # True jerk (m/s^3) is d(acc)/dt. np.diff(acc_mag) is a per-sample
+    # difference (m/s^2 per sample, not per second); multiplying by fs
+    # (samples/second) converts it to m/s^2 per second, i.e. m/s^3.
+    jerk = np.diff(acc_mag) * fs
     majority_class = chunk["Class"].mode().iloc[0]
 
     return {
@@ -118,6 +125,11 @@ def compute_window_features(chunk, session_id, fs):
         "gyroX_std": gyroX.std(),
         "gyroY_std": gyroY.std(),
         "gyroZ_std": gyroZ.std(),
+        # L2 norm of the three gyro axes, mirroring acc_mag: a
+        # mount-orientation-invariant summary of total rotational rate,
+        # where gyroX/Y/Z_std individually are not (they depend on how the
+        # phone happens to be oriented in the vehicle).
+        "gyro_mag_std": gyro_mag.std(),
         "spectral_energy_ratio_0.2_0.8hz": spectral_energy_ratio(acc_mag, fs),
     }
 

@@ -41,19 +41,25 @@ and are not used going forward.
 ## Spectral feature band
 
 `Timestamp` has no confirmed real-world unit (see above). Treating it as
-seconds gives an empirically estimated sampling rate of ~1.7 Hz, consistent
-across both files independently and close to this dataset family's
-documented ~2 Hz rate — this is the working assumption used for the
-per-session `session_fs_hz` value attached to every feature window.
+seconds and averaging over each whole file (train, test) — which spans the
+large inter-session gaps as well as the in-session samples — gives an
+empirically estimated sampling rate of ~1.7 Hz, consistent across both files
+independently and close to this dataset family's documented ~2 Hz rate. That
+whole-file figure is not what the pipeline actually uses, though: windowing,
+the jerk feature, and the spectral feature all use the **per-session**
+estimate from `estimate_session_fs()`, which excludes the inter-session gaps
+and comes out to **~1.85 Hz**, consistent within ~0.2% across all four train
+sessions and all three test sessions. ~1.85 Hz is the value attached to every
+window as `session_fs_hz`.
 
-At ~1.7 Hz the Nyquist frequency is ~0.85 Hz. The spectral energy ratio
+At ~1.85 Hz the Nyquist frequency is ~0.93 Hz. The spectral energy ratio
 feature was initially specified as the 0.5–2 Hz band, but that band mostly
 sits above Nyquist at the estimated rate, so it would have measured almost
 nothing but the data's fixed frequency ceiling rather than any real signal
 content. The band was changed to **0.2–0.8 Hz**, which stays safely under
-the ~0.85 Hz Nyquist limit, so the ratio reflects actual low-frequency
-energy in the acceleration-magnitude signal instead of being clipped by the
-sampling-rate assumption.
+the ~0.93 Hz Nyquist limit either way, so the ratio reflects actual
+low-frequency energy in the acceleration-magnitude signal instead of being
+clipped by the sampling-rate assumption.
 
 ## Scope of generalization claims
 
