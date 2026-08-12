@@ -124,6 +124,8 @@ curl -X POST http://localhost:8000/analyse \
   -F "file=@data/sample/sample_input.csv"
 ```
 
+![FastAPI interactive documentation](reports/figures/api_docs.png)
+
 `data/sample/sample_input.csv` is 60 rows carved directly from
 `test_motion_data.csv`, the held-out split the clustering model never saw
 during fitting.
