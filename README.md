@@ -229,3 +229,7 @@ invoke `.venv/bin/python` / `.venv/bin/pip` directly, as above.
 - Inertial sensors (accelerometer/gyroscope) cannot separate NORMAL from
   SLOW driving, because that distinction lives in vehicle speed, which
   these sensors do not measure -- not in acceleration or rotation.
+
+A fuller external self-review of this project's methodology, evaluation, API
+design, and reproducibility -- findings ranked by severity, with the fixes
+that came out of it -- is in [`docs/audit.md`](docs/audit.md).
