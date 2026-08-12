@@ -174,6 +174,39 @@ def plot_silhouette_vs_k(kmeans_results, out_path):
     plt.close(fig)
 
 
+def plot_feature_correlation_heatmap(corr_df, out_path):
+    """Heatmap of a feature x feature Pearson correlation matrix (train
+    windows). Fixed -1..1 color range (not data-driven) since correlation is
+    already on a fixed scale, unlike the z-score profile heatmap above."""
+    data = corr_df.to_numpy()
+    n = len(corr_df)
+
+    fig, ax = plt.subplots(figsize=(1.1 + 0.5 * n, 1.1 + 0.5 * n), facecolor=SURFACE)
+    im = ax.imshow(data, cmap=DIVERGING_CMAP, vmin=-1, vmax=1, aspect="auto")
+
+    ax.set_xticks(range(n))
+    ax.set_xticklabels(corr_df.columns, color=INK_PRIMARY, fontsize=8, rotation=90)
+    ax.set_yticks(range(n))
+    ax.set_yticklabels(corr_df.index, color=INK_PRIMARY, fontsize=8)
+    ax.set_title("Feature correlation matrix (train windows, Pearson r)", color=INK_PRIMARY, fontsize=12)
+    _grid_heatmap_axes(ax, n, n)
+
+    for i in range(n):
+        for j in range(n):
+            val = data[i, j]
+            text_color = "#ffffff" if abs(val) > 0.6 else INK_PRIMARY
+            ax.text(j, i, f"{val:.2f}", ha="center", va="center", fontsize=6, color=text_color)
+
+    cbar = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.03)
+    cbar.set_label("Pearson r", color=INK_SECONDARY, fontsize=9)
+    cbar.ax.tick_params(colors=INK_SECONDARY, labelsize=8)
+    cbar.outline.set_visible(False)
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=DPI, facecolor=SURFACE)
+    plt.close(fig)
+
+
 def plot_confusion_matrix(cm_df, out_path):
     """Heatmap of a labeled confusion matrix DataFrame
     (index 'true_<label>', columns 'pred_<label>')."""
