@@ -1,0 +1,5 @@
+held_out_session,held_out_class,n_holdout,train_classes_present,chosen_k,ari,macro_f1
+train-0,NORMAL,60,AGGRESSIVE+SLOW,2,0.0,0.0
+train-1,AGGRESSIVE,55,NORMAL+SLOW,2,0.0,0.0
+train-2,SLOW,26,AGGRESSIVE+NORMAL+SLOW,2,0.0,0.125
+train-3,SLOW,39,AGGRESSIVE+NORMAL+SLOW,2,0.0,0.016666666666666666
