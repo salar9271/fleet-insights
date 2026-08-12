@@ -25,10 +25,12 @@ packaging==26.3
 pandas==2.3.3
 pillow==12.3.0
 plotly==6.9.0
+pyarrow==25.0.1
 pydantic==2.13.4
 pydantic_core==2.46.4
 pyparsing==3.3.2
 python-dateutil==2.9.0.post0
+python-dotenv==1.2.2
 python-multipart==0.0.32
 pytz==2026.3.post1
 scikit-learn==1.7.2

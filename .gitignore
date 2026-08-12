@@ -1,4 +1,6 @@
-data/
+data/*
+!data/sample/
+!data/sample/**
 .venv/
 __pycache__/
 .env

@@ -1,0 +1,17 @@
+{
+  "summary": "Unsupervised clustering of driving-sensor windows finds two groups that differ mainly in overall motion intensity: a small cluster of high-acceleration, high-volatility windows (51 windows) and a much larger cluster of calmer, low-volatility windows (129 windows). This intensity split is a real, measurable pattern in the sensor data, but on held-out test windows it only weakly agrees with the dataset's three driving-behavior labels (ARI 0.1197), so it should be read as a rough energy signal, not a behavior classifier.",
+  "risk_cluster": "cluster 0 (n=51)",
+  "evidence": [
+    "acc_mag_std is +1.252 in cluster 0 versus -0.495 in cluster 1 -- acceleration-magnitude volatility is far higher in cluster 0",
+    "jerk_rms is +1.160 in cluster 0 versus -0.458 in cluster 1 -- sharper, more abrupt changes in acceleration",
+    "accY_rate_below_neg3 is +0.604 in cluster 0 versus -0.239 in cluster 1 -- hard braking/deceleration events are far more frequent",
+    "accX_max_abs is +1.068 in cluster 0 versus -0.422 in cluster 1 -- larger peak lateral acceleration, consistent with sharper maneuvers",
+    "cluster 0 is the minority group (51 of 180 training windows, 28%), consistent with high-intensity driving being the less common mode"
+  ],
+  "recommendation": "Flag windows assigned to cluster 0 for manual review as a coarse high-intensity filter (e.g. to prioritize footage review or coaching conversations), but do not use the cluster label on its own to certify a specific behavior category -- given the ARI of 0.1197, treat it as a triage signal, not a verdict.",
+  "caveats": [
+    "No vehicle or driver identifier exists in this dataset, so clusters cannot be attributed to a specific car or driver, and no multi-vehicle or cross-driver generalization claim can be made.",
+    "Each behavior class (SLOW / NORMAL / AGGRESSIVE) was recorded as a single continuous session rather than a pool of independent trips, so these results describe the sessions actually recorded, not a broader population.",
+    "Inertial sensors (accelerometer/gyroscope) cannot separate NORMAL from SLOW driving, because that distinction lives in vehicle speed, which these sensors do not measure -- not in acceleration or rotation."
+  ]
+}
