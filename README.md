@@ -85,28 +85,42 @@ either way. Full comparison, including the correlation matrix and heatmap:
 
 ### How stable are these numbers?
 
-Leave-one-session-out cross-validation across the 4 train sessions
-(`scripts/cross_validate.py`) puts a spread on the headline point estimates
-above:
+**Read this before the numbers below**: leave-one-session-out (LOSO)
+cross-validation across the 4 train sessions is structurally degenerate on
+this dataset, because every session contains exactly one class. That makes
+per-fold ARI exactly **0.00** and per-fold macro F1 **0.04** *by
+construction* — a mathematical consequence of the session/class structure,
+not a measurement of the model failing. **Do not read this as "ARI 0.12 →
+0.00" or "macro F1 0.49 → 0.04."** Neither of the fixed-split headline
+numbers is contradicted by anything below.
 
-- **k selection is stable: 2.00 ± 0.00** — every fold, including the two
-  where the training data only contains 2 of the 3 classes, picks k=2.
-- **ARI replicates in direction and rough magnitude**: pooling out-of-fold
-  cluster predictions across all 4 folds and comparing against the true
-  labels gives ARI = 0.16, consistent with the fixed-split 0.12. (Per-fold
-  ARI can't be summarized as a mean ± spread here — every train session is
-  single-class, which makes per-fold ARI exactly 0.00 by construction,
-  regardless of clustering quality; see the report below.)
-- **Macro F1 cannot be meaningfully cross-validated on this dataset at
-  all.** Because every session is single-class (SLOW is the only class
-  split across two sessions), a session-holdout RandomForest fold either
-  evaluates on a class the model never saw during training, or evaluates a
-  100%-one-class holdout against a macro-averaged metric that a handful of
-  wrong predictions can dominate. Both push macro F1 toward 0 for reasons
-  that have nothing to do with whether the features generalize. The 0.49
-  reported above is a real number on a real, class-balanced held-out test
-  set — it just isn't a number this dataset has enough independent sessions
-  to cross-validate.
+- **Why it's degenerate**: `adjusted_rand_score` against a reference
+  partition that is a single class is 0.0 for any non-trivial cluster
+  assignment, regardless of clustering quality (verified directly against
+  `sklearn`). And a RandomForest fold either evaluates on a class it never
+  saw during training (2 of 4 folds, since SLOW is the only class with two
+  sessions) or evaluates a 100%-one-class holdout against a macro-averaged
+  metric that a couple of wrong predictions can dominate. Both failure modes
+  are properties of "one session = one class," not of the features or the
+  model.
+- **The one number this CV does usefully produce**: pooling the four folds'
+  out-of-fold cluster predictions (which together span all 3 classes) and
+  computing one ARI against that pooled set gives **ARI = 0.16** —
+  consistent with the fixed-split 0.12, and the correct way to read "does
+  the ARI finding replicate under a different held-out arrangement." It
+  does.
+- **k selection is stable: 2.00 ± 0.00** across all 4 folds, including the
+  two trained on only 2 of the 3 classes.
+- **What would actually validate macro F1's stability**: a dataset with
+  *multiple independent sessions per class* (several separate drives
+  labeled AGGRESSIVE, several separate drives labeled NORMAL, etc.), so a
+  held-out fold could contain more than one class and macro F1 could be
+  computed on it the normal way. This dataset has one session per class
+  (two for SLOW only), so that validation isn't possible here — the 0.49
+  macro F1 above is a real, honestly-computed number on the one
+  class-balanced held-out test set this dataset provides, and this repo
+  does not have enough independent sessions to say how it would vary on a
+  different one.
 
 Full explanation and per-fold numbers:
 [`reports/cross_validation_findings.md`](reports/cross_validation_findings.md).
